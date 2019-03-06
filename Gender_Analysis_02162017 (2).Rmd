@@ -1,0 +1,123 @@
+---
+title: "Gender Barriers E-Commerce"
+output:
+  pdf_document: default
+  word_document: default
+date: "Feb 17, 2017"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Data Inspection and Cleaning Using Excel 2013
+
+In total, 427 responses were received. Out of 427, 301 responded reported to be current users of Etisalat’s data plan. Out of 301 responded who reported to be current users of Etisalat’s data plan, 97 fully completed the survey. The remaining respondents had missing values in their responses and were omitted from further analysis. The data was initially inspected, cleaned and reformatted using Microsoft Excel 2013. 
+
+#Data Analysis Using R
+
+## Data Input
+
+Data from the Excel sheet was read into a data frame:
+
+```{r eval=TRUE}
+setwd("C:/Users/cob.vkrotov/Documents/Research/Gender/JSIS/DATA/Analysis")
+require(xlsx)
+data <- read.xlsx(file = "survey_full_data.xlsx", header = TRUE, stringsAsFactors = FALSE, sheetIndex = 1)
+
+```
+
+Displaying the data summary:
+
+```{r eval=TRUE}
+head(data)
+```
+
+
+## Calculating Chronbach's Alpa
+
+```{r eval=TRUE}
+B1_Employment <- cbind(data$B1EmploymentF1R,data$B1EmploymentF2R, data$B1EmploymentF3R, data$B1EmploymentF4R, data$B1EmploymentF5R)
+
+B2_Education <- cbind(data$B2EducationF1R, data$B2EducationF2R,data$B2EducationF3R,data$B2EducationF4R,data$B2EducationF5R)
+
+B3_Communication <- cbind(data$B3CommunicationF1,data$B3CommunicationF2, data$B3CommunicationF3, data$B3CommunicationF4, data$B3CommunicationF5)
+
+B4_Privacy <- cbind(data$B4PrivacyF1,data$B4PrivacyF2,data$B4PrivacyF3,data$B4PrivacyF4R,data$B4PrivacyF5)
+
+B5_Compatibility <- cbind(data$B5CompatibilityF1,data$B5CompatibilityF2, data$B5CompatibilityF3, data$B5CompatibilityF4, data$B5CompatibilityF5)
+
+B6_Funding <- cbind(data$B6FundingF1R, data$B6FundingF2R, data$B6FundingF3R, data$B6FundingF4R, data$B6FundingF5R)
+
+require(psy)
+
+cronbach(B1_Employment)
+cronbach(B2_Education)
+cronbach(B3_Communication)
+cronbach(B4_Privacy)
+cronbach(B5_Compatibility)
+cronbach(B6_Funding)
+
+```
+
+
+## Creating Data Frames for Further Analysis
+
+Creating new data frames for analysis:
+
+```{r eval=TRUE}
+data_small <- data.frame(data$Gender, data$B1Employment, data$B2Education, data$B3Communication, data$B4Privacy, data$B5Compatibility, data$B6Funding, data$X4hoodStartOnlineBusiness)
+
+
+```
+
+## Generating Descriptive Statistics
+
+Generating Summary Statistics using "stargazer" package:
+
+```{r eval=TRUE}
+require(stargazer)
+stargazer(data, type="html")
+stargazer(data_small, type="html")
+```
+
+
+
+## Performing Regression Analysis
+
+Performing regression analysis to see how the barriers are related to intention to start a business online.
+
+### Estimating Models and Generating Tables for Sentiment_Score1 Variable
+
+First, the regression analysis is performed for Sentiment_Score1 Variable. First, we fit linear models involving Sentiment_Score1 variable and various outcome variables:
+
+```{r eval=TRUE}
+model <- lm(data$X4hoodStartOnlineBusiness ~ data$B1Employment + data$B2Education + data$B3Communication + data$B4Privacy + data$B5Compatibility + data$B6Funding, data = data )
+```
+
+Then we generate a combined regression table for the 5 models generated:
+
+```{r eval=TRUE}
+stargazer(model, type = "html", title="Results for SentimentScore1 Variable", style = "default")
+```
+
+### Doing t-test
+
+First, we split the data frame into two sets (one for males and one for females)
+
+```{r eval=TRUE}
+split_frames <- split(data_small, data_small$data.Gender)
+female_frame <- data.frame(split_frames[1])
+male_frame <- data.frame(split_frames[2])
+```
+
+doing t-tests:
+
+```{r eval=TRUE}
+t.test(male_frame$Male.data.B1Employment, female_frame$Female.data.B1Employment,var.equal = TRUE)
+t.test(male_frame$Male.data.B2Education, female_frame$Female.data.B2Education, var.equal = TRUE)
+t.test(male_frame$Male.data.B3Communication, female_frame$Female.data.B3Communication,var.equal = TRUE)
+t.test(male_frame$Male.data.B4Privacy, female_frame$Female.data.B4Privacy,var.equal = TRUE)
+t.test(male_frame$Male.data.B5Compatibility, female_frame$Female.data.B5Compatibility, var.equal = TRUE)
+t.test(male_frame$Male.data.B6Funding, female_frame$Female.data.B6Funding, var.equal = TRUE)
+
+```
